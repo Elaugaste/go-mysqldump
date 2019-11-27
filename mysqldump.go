@@ -1,6 +1,7 @@
 package mysqldump
 
 import (
+	"compress/gzip"
 	"database/sql"
 	"errors"
 	"io"
@@ -22,7 +23,7 @@ func Register(db *sql.DB, dir, format string) (*Data, error) {
 	}
 
 	name := time.Now().Format(format)
-	p := path.Join(dir, name+".sql")
+	p := path.Join(dir, name+".sql.gz")
 
 	// Check dump directory
 	if e, _ := exists(p); e {
@@ -31,13 +32,14 @@ func Register(db *sql.DB, dir, format string) (*Data, error) {
 
 	// Create .sql file
 	f, err := os.Create(p)
+	gzf := gzip.NewWriter(f)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &Data{
-		Out:        f,
+		Out:        gzf,
 		Connection: db,
 	}, nil
 }
