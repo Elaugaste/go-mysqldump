@@ -127,14 +127,14 @@ func (data *Data) Dump() error {
 	}
 
 	if err := data.getTemplates(); err != nil {
-		return err
+		return fmt.Errorf("getTemplates: %s", err.Error())
 	}
 
 	// Start the read only transaction and defer the rollback until the end
 	// This way the database will have the exact state it did at the begining of
 	// the backup and nothing can be accidentally committed
 	if err := data.begin(); err != nil {
-		return err
+		return fmt.Errorf("begin: %s", err.Error())
 	}
 	defer data.rollback()
 
@@ -148,7 +148,7 @@ func (data *Data) Dump() error {
 
 	tables, err := data.getTables()
 	if err != nil {
-		return err
+		return fmt.Errorf("getTables: %s", err.Error())
 	}
 
 	// Lock all tables before dumping if present
@@ -163,7 +163,7 @@ func (data *Data) Dump() error {
 		}
 
 		if _, err := data.Connection.Exec(b.String()); err != nil {
-			return err
+			return fmt.Errorf("data.Connection.Exec: %s", err.Error())
 		}
 
 		defer data.Connection.Exec("UNLOCK TABLES")
@@ -171,11 +171,12 @@ func (data *Data) Dump() error {
 
 	for _, name := range tables {
 		if err := data.dumpTable(name); err != nil {
-			return err
+			return fmt.Errorf("dumpTable: %v", data.err)
 		}
 	}
+
 	if data.err != nil {
-		return data.err
+		return fmt.Errorf("data.err: %v", data.err)
 	}
 
 	meta.CompleteTime = time.Now().String()
@@ -189,7 +190,7 @@ func (data *Data) Dump() error {
 func (data *Data) begin() (err error) {
 	data.tx, err = data.Connection.BeginTx(context.Background(), &sql.TxOptions{
 		Isolation: sql.LevelRepeatableRead,
-		ReadOnly:  true,
+		ReadOnly:  false,
 	})
 	return
 }
