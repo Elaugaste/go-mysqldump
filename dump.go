@@ -171,7 +171,7 @@ func (data *Data) Dump() error {
 
 	for _, name := range tables {
 		if err := data.dumpTable(name); err != nil {
-			return fmt.Errorf("dumpTable: %v", data.err)
+			return fmt.Errorf("dumpTable '%s': %s", name, err.Error())
 		}
 	}
 
